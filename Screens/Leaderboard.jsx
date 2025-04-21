@@ -1,7 +1,7 @@
 import {ScrollView, StyleSheet, Text, TouchableOpacity, View, ImageBackground, Image } from 'react-native';
 
 
-export function Leaderboard() {
+export default function Leaderboard() {
     const scores = [
         {
             'guessNumber': 2,

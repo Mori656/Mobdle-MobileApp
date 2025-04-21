@@ -1,8 +1,10 @@
 import {ScrollView, StyleSheet, Text, TouchableOpacity, View, ImageBackground, Image } from 'react-native';
 import { Dropdown } from 'react-native-element-dropdown';
 
+import { versions } from '../Components/Versions';
+import Block from '../Components/GameBlock';
 
-export function GamePage () {
+export default function GamePage () {
     const mobs = [
         {
             "name": "Allay",
@@ -11,8 +13,7 @@ export function GamePage () {
             "health": 20,
             "height": 0.6,
             "behavior": [
-              "Passive",
-              "Neutral"
+              "Passive"
             ],
             "movement": [
               "Flying"
@@ -72,12 +73,12 @@ export function GamePage () {
                                             {mobs.map((item, index) => (
                                                 <View key={index} style={style.chosenItem}>
                                                     <Image source={{uri: item.image}} style={style.itemImage}/>
-                                                    <View style={style.itemBlock}><Text>{item.version}</Text></View>
-                                                    <View style={style.itemBlock}><Text>{item.health}</Text></View>
-                                                    <View style={style.itemBlock}><Text>{item.height}</Text></View>
-                                                    <View style={[style.itemBlock, {backgroundColor: '#ee5252'}]}><Text>{item.behavior}</Text></View>
-                                                    <View style={style.itemBlock}><Text>{item.movement}</Text></View>
-                                                    <View style={style.itemBlock}><Text>{item.dimension}</Text></View>
+                                                    <Block text={versions[item.version]} status={'more'}></Block>
+                                                    <Block text={item.health} status={'less'}></Block>
+                                                    <Block text={item.height} status={'more'}></Block>
+                                                    <Block text={item.behavior} status={'correct'}></Block>
+                                                    <Block text={item.movement} status={'partial'}></Block>
+                                                    <Block text={item.dimension} status={'correct'}></Block>
                                                 </View>
                                             ))}
                                             </View>
@@ -103,10 +104,10 @@ const style = StyleSheet.create({
         minHeight: '100%',
     },
     logo: {
-        height: 100,
+        height: 90,
         width: 400,
         marginTop: 50,
-        marginBottom: 100
+        marginBottom: 50
     },
     gameContainer: {
         width: '100%',
@@ -126,6 +127,7 @@ const style = StyleSheet.create({
         backgroundColor: '#a0c4ff',
         height: 70,
         width: 70,
+        justifyContent: 'center',
     },
     submitText: {
         fontSize: 50,
@@ -138,11 +140,11 @@ const style = StyleSheet.create({
     },
     category: {
         width: 100,
-        height: 50,
+        height: 20,
         textAlign: 'center',
         textAlignVertical: 'bottom',
         color: '#fff',
-        fontSize: 20
+        fontSize: 16
     },
     chosenOptions: {
         display: 'flex',
@@ -160,13 +162,4 @@ const style = StyleSheet.create({
         borderWidth: 3,
         borderColor: '#ccc',
     },
-    itemBlock: {
-        width: 100,
-        height: 100,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: '#52ee52',
-        borderWidth: 3,
-        borderColor: '#ccc',
-    }
 })
