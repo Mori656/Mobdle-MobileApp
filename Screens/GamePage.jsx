@@ -1,10 +1,114 @@
-import {ScrollView, StyleSheet, Text, TouchableOpacity, View, ImageBackground, Image } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View, ImageBackground, Image, Alert } from 'react-native';
 import { Dropdown } from 'react-native-element-dropdown';
-
 import { versions } from '../Components/Versions';
 import Block from '../Components/GameBlock';
+import { useEffect, useState } from 'react';
+
+import useGameStore from '../Stores/gameStore';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function GamePage () {
+    const [selectedOption, setSelectedOption] = useState();
+    
+    const {
+        chosenMob,
+        options, fetchOptions, removeOption,
+        triedOptions, modifyTriedOptions, clearTriedOptions,
+    } = useGameStore();
+
+    useEffect(() => {
+        fetchOptions();
+        clearTriedOptions();
+    }, []);
+
+    const checkStatus = (info) => {
+        const selectedValue = selectedOption[info];
+        const chosenValue = chosenMob[info];
+        
+        if (JSON.stringify(selectedValue) === JSON.stringify(chosenValue)) {
+            return 'correct';
+        }
+
+        if (Array.isArray(selectedValue)) {
+            if (selectedValue.some((val) => chosenValue.includes(val))) {
+                return 'partial';
+            }
+        }
+    
+        return 'wrong';
+    };
+
+    const checkStatus2 = (info) => {
+        const selectedValue = selectedOption[info];
+        const chosenValue = chosenMob[info];
+        
+        if (selectedValue === chosenValue) {
+            return 'correct';
+        } else if (selectedValue < chosenValue) {
+            return 'more';
+        } else {
+            return 'less';
+        }
+    };
+
+    const checkWin = async (item) => {
+        if (
+            item.versionStatus !== 'correct' ||
+            item.healthStatus !== 'correct' ||
+            item.heightStatus !== 'correct' ||
+            item.behaviorStatus !== 'correct' ||
+            item.movementStatus !== 'correct' ||
+            item.dimensionStatus !== 'correct'
+        ) {
+            return;
+        } else {
+            Alert.alert(
+                'Congratulations!',
+                `You guessed the mob: ${item.name}`,
+            );
+
+            const Leaderboard = await AsyncStorage.getItem('Leaderboard');
+            const username = await AsyncStorage.getItem('username');
+            const score = {
+                username: username,
+                score: triedOptions.length,
+                Date: new Date().toLocaleDateString(),
+                mob: chosenMob.name,
+            };
+
+            const tmp = Leaderboard ? JSON.parse(Leaderboard) : [];
+            tmp.push(score);
+
+            await AsyncStorage.setItem('Leaderboard', JSON.stringify(tmp));
+        }
+    }
+    
+
+    const handleSubmit = () => {
+        if (selectedOption) {
+            const tmp = {
+                name: selectedOption.name, 
+                image: selectedOption.image, 
+                version: selectedOption.version, 
+                versionStatus: checkStatus2('version'),
+                health: selectedOption.health, 
+                healthStatus: checkStatus2('health'),
+                height: selectedOption.height, 
+                heightStatus: checkStatus2('height'),
+                behavior: selectedOption.behavior, 
+                behaviorStatus: checkStatus('behavior'),
+                movement: selectedOption.movement, 
+                movementStatus: checkStatus('movement'),
+                dimension: selectedOption.dimension,
+                dimensionStatus: checkStatus('dimension')
+            }
+            checkWin(tmp);
+            modifyTriedOptions(tmp);
+            setSelectedOption(null);
+            removeOption(selectedOption);
+        }
+    }
+
     const mobs = [
         {
             "name": "Allay",
@@ -37,7 +141,9 @@ export default function GamePage () {
           "dimension": [
             "Overworld"
           ]
-        }]
+    }];
+
+
 
     return (
         <View style={style.mainContainer}>
@@ -49,15 +155,45 @@ export default function GamePage () {
 
                             <View style={style.gameContainer}>
                                 <View style={style.guessingZone}>
-                                    {/* <Dropdown /> */}
-                                    <TouchableOpacity style={style.select}></TouchableOpacity>
-                                    <TouchableOpacity style={style.submit}>
-                                        <Text style={style.submitText}>{'>'}</Text>
+                                    <Dropdown
+                                        style={{
+                                            height: 60,
+                                            width: 285,
+                                            borderWidth: 1,
+                                            paddingHorizontal: 10,
+                                            backgroundColor: '#A0C4FF',
+                                        }}
+                                        selectedTextStyle={{
+                                            fontSize: 24,
+                                        }}
+                                        placeholderStyle={{
+                                            fontSize: 24,
+                                            color: '#555',
+                                        }}
+                                        data={options}
+                                        search
+                                        labelField="name"
+                                        valueField="name"
+                                        imageField="image"
+                                        placeholder="Choose a mob"
+                                        value={selectedOption}
+                                        onChange={item => {
+                                            setSelectedOption(item);
+                                            console.log('Selected:', item);
+                                        }}
+                                        renderItem={item => (
+                                            <View style={dropdownStyle.item}>
+                                                <Image source={{uri: item.image}} style={dropdownStyle.image}/><Text style={dropdownStyle.text}>{item.name}</Text>
+                                            </View>
+                                        )}
+                                    />
+                                    <TouchableOpacity style={style.submit} onPress={handleSubmit}>
+                                        <Text style={style.submitText}>{'>>'}</Text>
                                     </TouchableOpacity>
                                 </View>
 
 
-                                <ScrollView style={{height: 300, width: 350, marginTop: 20}} horizontal>
+                                <ScrollView style={{height: 400, width: 350, marginTop: 20}} horizontal>
                                     <View style={{display: 'flex', flexDirection: 'column'}}>
                                         <View style={style.categoryView}>
                                             <Text style={style.category}>Mob</Text>
@@ -70,16 +206,17 @@ export default function GamePage () {
                                         </View>
                                         <ScrollView>
                                             <View style={style.chosenOptions}> 
-                                            {mobs.map((item, index) => (
+                                            {triedOptions.map((item, index) => (
+                                                item?(
                                                 <View key={index} style={style.chosenItem}>
                                                     <Image source={{uri: item.image}} style={style.itemImage}/>
-                                                    <Block text={versions[item.version]} status={'more'}></Block>
-                                                    <Block text={item.health} status={'less'}></Block>
-                                                    <Block text={item.height} status={'more'}></Block>
-                                                    <Block text={item.behavior} status={'correct'}></Block>
-                                                    <Block text={item.movement} status={'partial'}></Block>
-                                                    <Block text={item.dimension} status={'correct'}></Block>
-                                                </View>
+                                                    <Block text={versions[item.version]} status={item.versionStatus}></Block>
+                                                    <Block text={item.health} status={item.healthStatus}></Block>
+                                                    <Block text={item.height} status={item.heightStatus}></Block>
+                                                    <Block text={item.behavior} status={item.behaviorStatus}></Block>
+                                                    <Block text={item.movement} status={item.movementStatus}></Block>
+                                                    <Block text={item.dimension} status={item.dimensionStatus}></Block>
+                                                </View>) : null
                                             ))}
                                             </View>
                                         </ScrollView>
@@ -116,21 +253,17 @@ const style = StyleSheet.create({
         display: 'flex',
         flexDirection: 'row',
         gap: 5,
-        alignItems: 'stretch'
-    },
-    select: {
-        backgroundColor: '#a0c4ff',
-        width: 275,
-        height: 70,
+        alignItems: 'stretch',
+        width: '100%',
     },
     submit: {
         backgroundColor: '#a0c4ff',
-        height: 70,
-        width: 70,
+        height: 60,
+        width: 60,
         justifyContent: 'center',
     },
     submitText: {
-        fontSize: 50,
+        fontSize: 30,
         textAlign: 'center',
     },
     categoryView: {
@@ -154,7 +287,10 @@ const style = StyleSheet.create({
         display: 'flex',
         flexDirection: 'row',
         gap: 10,
-        marginVertical: 5
+        marginVertical: 5,
+        borderBottomWidth: 2,
+        borderBottomColor: '#ccc',
+        paddingBottom: 10,
     },
     itemImage: {
         height: 100,
@@ -162,4 +298,21 @@ const style = StyleSheet.create({
         borderWidth: 3,
         borderColor: '#ccc',
     },
+})
+
+const dropdownStyle = StyleSheet.create({
+    item: {
+        padding: 10,
+        display: 'flex',
+        flexDirection: 'row'
+    },
+    image: {
+        width: 30,
+        height: 30
+    },
+    text: {
+        fontSize: 20,
+        marginLeft: 10,
+        textAlignVertical: 'center'
+    }
 })
