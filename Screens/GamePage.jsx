@@ -1,4 +1,4 @@
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View, ImageBackground, Image, Alert } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View, ImageBackground, Image, Alert, Modal } from 'react-native';
 import { Dropdown } from 'react-native-element-dropdown';
 import { versions } from '../Components/Versions';
 import Block from '../Components/GameBlock';
@@ -6,15 +6,22 @@ import { useEffect, useState } from 'react';
 
 import useGameStore from '../Stores/gameStore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useNavigation } from '@react-navigation/native';
+import { SelectList } from 'react-native-dropdown-select-list'
 
-export default function GamePage () {
+
+export default function GamePage() {
     const [selectedOption, setSelectedOption] = useState();
+    const [winModalVisible, setWinModalVisible] = useState(false);
+    const [winInfo, setWinInfo] = useState(null);
     
     const {
         chosenMob,
         options, fetchOptions, removeOption,
         triedOptions, modifyTriedOptions, clearTriedOptions,
     } = useGameStore();
+
+    const navigation = useNavigation();
 
     useEffect(() => {
         fetchOptions();
@@ -62,17 +69,14 @@ export default function GamePage () {
         ) {
             return;
         } else {
-            Alert.alert(
-                'Congratulations!',
-                `You guessed the mob: ${item.name}`,
-            );
-
             const Leaderboard = await AsyncStorage.getItem('Leaderboard');
             const username = await AsyncStorage.getItem('username');
+            const userImage = await AsyncStorage.getItem('userImage');
             const score = {
                 username: username,
+                image: userImage || 'https://minecraft.wiki/images/HumanFace.png?db4dc',
                 score: triedOptions.length,
-                Date: new Date().toLocaleDateString(),
+                Date: new Date().toLocaleDateString('pl-PL'),
                 mob: chosenMob.name,
             };
 
@@ -80,6 +84,15 @@ export default function GamePage () {
             tmp.push(score);
 
             await AsyncStorage.setItem('Leaderboard', JSON.stringify(tmp));
+
+            // Show win modal
+            setWinInfo({
+                mob: item.name,
+                image: item.image,
+                score: triedOptions.length,
+                date: score.Date,
+            });
+            setWinModalVisible(true);
         }
     }
     
@@ -172,6 +185,11 @@ export default function GamePage () {
                                         }}
                                         data={options}
                                         search
+                                        searchPlaceholder="Search mob..."
+                                        inputSearchStyle={{
+                                            fontSize: 20,
+                                            color: '#000',
+                                        }}
                                         labelField="name"
                                         valueField="name"
                                         imageField="image"
@@ -225,6 +243,53 @@ export default function GamePage () {
                             </View>
                     </View>
             </ImageBackground>
+            <Modal
+  visible={winModalVisible}
+  transparent={true}
+  animationType="slide"
+  onRequestClose={() => setWinModalVisible(false)}
+>
+  <View style={style.modalOverlay}>
+    <View style={style.modalContent}>
+      <Text style={style.modalTitle}>You Won!</Text>
+      {winInfo && (
+        <>
+          <Image source={{ uri: winInfo.image }} style={style.winMobImage} />
+          <Text style={style.winText}>Mob: <Text style={{fontWeight: 'bold'}}>{winInfo.mob}</Text></Text>
+          <Text style={style.winText}>Score: <Text style={{fontWeight: 'bold'}}>{winInfo.score}</Text></Text>
+          <Text style={style.winText}>Date: <Text style={{fontWeight: 'bold'}}>{winInfo.date}</Text></Text>
+        </>
+      )}
+      <TouchableOpacity
+        style={style.closeModalButton}
+        onPress={() => {
+            setWinModalVisible(false);
+            navigation.reset({
+                index: 0,
+                routes: [{ name: 'HomePage' }],
+            });
+        }}
+      >
+        <Text style={style.buttonText}>Main Menu</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={[style.closeModalButton, {marginTop: 8}]}
+        onPress={() => {
+            setWinModalVisible(false);
+            navigation.reset({
+                index: 1,
+                routes: [
+                    { name: 'HomePage' },
+                    { name: 'Leaderboard' }
+                ],
+            });
+        }}
+      >
+        <Text style={style.buttonText}>Leaderboard</Text>
+      </TouchableOpacity>
+    </View>
+  </View>
+</Modal>
         </View>
     )
 }
@@ -272,7 +337,7 @@ const style = StyleSheet.create({
         gap: 10
     },
     category: {
-        width: 100,
+        width: 110,
         height: 20,
         textAlign: 'center',
         textAlignVertical: 'bottom',
@@ -297,6 +362,53 @@ const style = StyleSheet.create({
         width: 100,
         borderWidth: 3,
         borderColor: '#ccc',
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modalContent: {
+        backgroundColor: '#fff',
+        borderRadius: 10,
+        padding: 20,
+        width: 320,
+        alignItems: 'center',
+    },
+    modalTitle: {
+        fontSize: 22,
+        fontWeight: 'bold',
+        marginBottom: 16,
+        color: '#222',
+    },
+    winMobImage: {
+        width: 80,
+        height: 80,
+        borderRadius: 10,
+        marginBottom: 12,
+        borderWidth: 2,
+        borderColor: '#a0c4ff',
+        backgroundColor: '#fff',
+    },
+    winText: {
+        fontSize: 18,
+        color: '#222',
+        marginBottom: 6,
+    },
+    closeModalButton: {
+        backgroundColor: '#a0c4ff',
+        padding: 10,
+        borderRadius: 6,
+        marginTop: 16,
+        alignItems: 'center',
+        width: 160,
+    },
+    buttonText: {
+        color: '#222',
+        fontWeight: 'bold',
+        fontSize: 16,
+        textAlign: 'center',
     },
 })
 

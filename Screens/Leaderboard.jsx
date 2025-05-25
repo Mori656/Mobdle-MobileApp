@@ -27,19 +27,19 @@ export default function Leaderboard() {
 
     return (
         <View style={style.mainContainer}>
-            <ImageBackground source={require('../assets/img/MainPageBackground.jpg')} resizeMode="cover">
+            <ImageBackground source={require('../assets/img/MainPageBackground.jpg')} resizeMode="cover" style={{ flex: 1 }}>
                 <View style={style.contentContainer}>
                     <View>
                         <Image source={require('../assets/img/leaderboard.png')} resizeMode="stretch" style={style.logo}/>
                     </View>
+                    {/* Header Row */}
+                    <View style={style.headerRow}>
+                        <View style={style.userCell}><Text style={style.headerCell}>User</Text></View>
+                        <View style={style.guessesCell}><Text style={style.headerCell}>Guesses</Text></View>
+                        <View style={style.mobCell}><Text style={style.headerCell}>Mob</Text></View>
+                    </View>
                     <ScrollView style={{height: 400}}>
                         <View style={style.leaderboard}>
-                            {/* Header Row */}
-                            <View style={style.headerRow}>
-                                <View style={style.userCell}><Text style={style.headerCell}>User</Text></View>
-                                <View style={style.guessesCell}><Text style={style.headerCell}>Guesses</Text></View>
-                                <View style={style.mobCell}><Text style={style.headerCell}>Mob</Text></View>
-                            </View>
                             {/* Score Rows */}
                             {Object.entries(groupedScores).map(([date, dayScores]) => (
                                 <View key={date}>
@@ -74,9 +74,9 @@ const style = StyleSheet.create({
         width: '100%',
     },
     contentContainer: {
-        flex: 1,
         alignItems: 'center',
         paddingTop: 40,
+        flex: 1,
     },
     logo: {
         height: 90,
@@ -101,6 +101,7 @@ const style = StyleSheet.create({
         borderColor: '#222',
         paddingVertical: 8,
         alignItems: 'center',
+        width: 370,
     },
     headerCell: {
         color: '#222',
@@ -113,7 +114,6 @@ const style = StyleSheet.create({
         borderBottomWidth: 1,
         borderColor: '#a0c4ff',
         paddingVertical: 8,
-        backgroundColor: 'transparent',
         alignItems: 'center',
     },
     userCell: {
