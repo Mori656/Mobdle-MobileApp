@@ -1,7 +1,7 @@
 import { TextInput, StyleSheet, Text, TouchableOpacity, View, ImageBackground, Image, Modal, FlatList, } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useState, useEffect } from 'react';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import userImages from '../Components/UserImages';
 
 export default function Settings() {
@@ -9,9 +9,15 @@ export default function Settings() {
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
 
-  const saveUsername = async () => {
+  const navigation = useNavigation();
+
+  const saveSettings = async () => {
     try {
       await AsyncStorage.setItem('username', username);
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'HomePage' }],
+      });
     } catch (e) {
       console.error('AsyncStorage error:', e);
     }
@@ -102,7 +108,7 @@ export default function Settings() {
             placeholder="Username"
           />
 
-          <TouchableOpacity onPress={saveUsername} style={style.button}>
+          <TouchableOpacity onPress={saveSettings} style={style.button}>
             <Text style={style.buttonText}>Save</Text>
           </TouchableOpacity>
         </View>
