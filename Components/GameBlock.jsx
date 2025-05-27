@@ -23,8 +23,8 @@ export default function Block({status, text}) {
 
 const style = StyleSheet.create({
     GameBlock: {
-        width: 100,
-        height: 100,
+        width: 110,
+        height: 110,
         justifyContent: 'center',
         alignItems: 'center',
     },
